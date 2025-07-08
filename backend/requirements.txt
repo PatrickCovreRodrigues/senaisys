@@ -1,0 +1,25 @@
+# FastAPI e dependências principais
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Banco de dados
+sqlalchemy==2.0.23
+
+# Validação e serialização
+pydantic==2.5.0
+
+# Requisições HTTP (para testes)
+requests==2.31.0
+
+# Suporte a tipos Python
+typing-extensions==4.8.0
+
+# Outras dependências úteis
+python-multipart==0.0.6  # Para upload de arquivos
+python-jose[cryptography]==3.3.0  # Para JWT (caso precise no futuro)
+passlib[bcrypt]==1.7.4  # Para hash de senhas (caso precise no futuro)
+
+# Dependências para sistema de alocação
+holidays==0.75  # Para feriados nacionais
+pandas==2.3.0  # Para exportação de CSV
+numpy==2.3.1  # Dependência do pandas 
