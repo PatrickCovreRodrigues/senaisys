@@ -1,0 +1,39 @@
+Sistema de Gestão Docente - Alocação Automática
+"Ano: 2025, Mês: 4"
+Feriados detectados: 10
+
+MATRIZ AGENDADA (Dias x Horários)
+Dia/Horário,19:00,19:50,20:50,21:40
+Segunda,-,-,-,-
+Terça,48273,48273,48273,48273
+Quarta,19385,19385,19385,19385
+Quinta,21947,21947,21947,21947
+Sexta,-,-,-,-
+
+MATRIZ CALENDÁRIO (Horários x Dias)
+Horário/Dia,Segunda,Terça,Quarta,Quinta,Sexta
+19:00,-,48273,19385,21947,-
+19:50,-,48273,19385,21947,-
+20:50,-,48273,19385,21947,-
+21:40,-,48273,19385,21947,-
+
+RELATÓRIO DE DOCENTES
+ID,Matrícula,CH Original,Tipo,Saldo Final,Horas Reduzidas,Dias Alocados,Restrições
+P1,48273,108,1,101.34,6.66,"1, 2, 1, 2",-
+P2,19385,108,1,104.67,3.33,"2, 3",-
+P3,60714,108,1,108.00,0.00,-,3
+P4,84529,72,2,72.00,0.00,-,-
+P5,21947,72,2,68.67,3.33,3,-
+P6,73018,72,2,72.00,0.00,-,-
+P7,59136,36,3,36.00,0.00,-,-
+P8,36402,36,3,36.00,0.00,-,-
+P9,10675,36,3,36.00,0.00,-,-
+P10,95821,36,3,36.00,0.00,-,-
+
+ESTATÍSTICAS
+Total de Docentes,10
+Docentes Alocados,3
+Taxa de Alocação (%),30.0
+Total Horas Reduzidas,13.32
+Dias Letivos,3
+Feriados no Mês,2

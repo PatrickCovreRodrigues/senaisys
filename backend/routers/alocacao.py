@@ -12,6 +12,7 @@ from alocacao_docentes import (
     DIAS_SEMANA,
     HORARIOS_NOTURNOS
 )
+from sistema_alocacao_otimizado import alocar_docentes_otimizado
 
 router = APIRouter(prefix="/alocacao", tags=["alocacao"])
 
@@ -40,6 +41,119 @@ def processar_alocacao_docentes(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao processar alocação: {str(e)}")
+
+@router.post("/processar-otimizado")
+def processar_alocacao_otimizada(
+    dados_docentes: List[Dict] = Body(..., description="Lista de docentes para alocação"),
+    ano: Optional[int] = Body(None, embed=True),
+    mes: Optional[int] = Body(None, embed=True),
+    exportar_csv: bool = Body(True, embed=True),
+    persistir_db: bool = Body(True, embed=True),
+    db: Session = Depends(get_db)
+):
+    """
+    Processa a alocação automática OTIMIZADA de docentes seguindo o modelo matemático 5x4.
+    
+    Formato dos dados de entrada:
+    ```json
+    [
+        {
+            "id": "P1",
+            "mat": 12345,
+            "ch": 108.0,
+            "saldo": 108.0,
+            "rest": [3, 4]
+        }
+    ]
+    ```
+    
+    Onde:
+    - id: Identificador do docente
+    - mat: Matrícula do docente
+    - ch: Carga horária total
+    - saldo: Saldo de horas disponível
+    - rest: Lista de dias restritos (0=Segunda, 1=Terça, ..., 4=Sexta)
+    """
+    try:
+        if not dados_docentes:
+            raise HTTPException(status_code=400, detail="Lista de docentes não pode estar vazia")
+        
+        # Processa alocação otimizada
+        resultado = alocar_docentes_otimizado(
+            dados_docentes=dados_docentes,
+            ano=ano,
+            mes=mes,
+            exportar_csv=exportar_csv,
+            persistir_db=persistir_db,
+            db=db if persistir_db else None
+        )
+        
+        return {
+            "success": True,
+            "resultado": resultado,
+            "mensagem": "Alocação otimizada processada com sucesso",
+            "arquivo_csv": resultado.get("arquivo_csv"),
+            "persistido_db": resultado.get("persistido_db", False)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao processar alocação otimizada: {str(e)}")
+
+@router.post("/processar-banco")
+def processar_alocacao_do_banco(
+    ano: Optional[int] = Body(None, embed=True),
+    mes: Optional[int] = Body(None, embed=True),
+    exportar_csv: bool = Body(True, embed=True),
+    persistir_db: bool = Body(True, embed=True),
+    db: Session = Depends(get_db)
+):
+    """
+    Processa a alocação otimizada usando docentes do banco de dados.
+    Converte automaticamente os dados do banco para o formato otimizado.
+    """
+    try:
+        # Busca todos os docentes do banco
+        docentes_db = db.query(DocenteModel).all()
+        
+        if not docentes_db:
+            raise HTTPException(status_code=404, detail="Nenhum docente encontrado no banco de dados")
+        
+        # Converte para formato otimizado
+        dados_docentes = []
+        for docente in docentes_db:
+            dados_docentes.append({
+                "id": f"D{docente.id}",
+                "mat": docente.matricula or docente.id,
+                "ch": docente.carga_horaria_total or 0.0,
+                "saldo": docente.saldo_horas or docente.carga_horaria_total or 0.0,
+                "rest": docente.restricoes_dias or []
+            })
+        
+        # Processa alocação otimizada
+        resultado = alocar_docentes_otimizado(
+            dados_docentes=dados_docentes,
+            ano=ano,
+            mes=mes,
+            exportar_csv=exportar_csv,
+            persistir_db=persistir_db,
+            db=db if persistir_db else None
+        )
+        
+        return {
+            "success": True,
+            "resultado": resultado,
+            "mensagem": f"Alocação otimizada processada com {len(dados_docentes)} docentes do banco",
+            "arquivo_csv": resultado.get("arquivo_csv"),
+            "persistido_db": resultado.get("persistido_db", False),
+            "docentes_processados": len(dados_docentes)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao processar alocação do banco: {str(e)}")
 
 @router.get("/matriz-horarios")
 def obter_matriz_horarios(
