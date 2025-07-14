@@ -50,9 +50,6 @@
       
       <div class="action-buttons">
         <button class="btn-voltar" @click="goBack">Voltar</button>
-        <button class="btn-continuar" @click="criarNovaUC" v-if="ucs.length > 0">
-          Criar Nova UC
-        </button>
       </div>
     </div>
   </main>

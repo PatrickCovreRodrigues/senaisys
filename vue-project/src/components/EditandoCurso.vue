@@ -50,9 +50,6 @@
       
       <div class="action-buttons">
         <button class="btn-voltar" @click="goBack">Voltar</button>
-        <button class="btn-continuar" @click="criarNovoCurso" v-if="cursos.length > 0">
-          Criar Novo Curso
-        </button>
       </div>
     </div>
   </main>

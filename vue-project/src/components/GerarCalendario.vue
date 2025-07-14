@@ -143,11 +143,11 @@
             <div class="calendar-content">
               <div class="calendar-header">
                 <div class="calendar-nav">
-                  <v-btn icon @click="previousMonth">
+                  <v-btn icon size="small" @click="previousMonth">
                     <v-icon>mdi-chevron-left</v-icon>
                   </v-btn>
                   <h3 class="month-year">{{ monthNames[currentMonth] }} {{ currentYear }}</h3>
-                  <v-btn icon @click="previousMonth">
+                  <v-btn icon size="small" @click="nextMonth">
                     <v-icon>mdi-chevron-right</v-icon>
                   </v-btn>
                 </div>
@@ -158,6 +158,7 @@
                     color="success" 
                     variant="outlined"
                     prepend-icon="mdi-calendar-check"
+                    size="small"
                   >
                     {{ totalEventos }} evento{{ totalEventos > 1 ? 's' : '' }}
                   </v-chip>
@@ -167,6 +168,7 @@
                     color="info" 
                     variant="outlined"
                     prepend-icon="mdi-calendar-blank"
+                    size="small"
                   >
                     Nenhum evento
                   </v-chip>
@@ -178,7 +180,8 @@
                     size="small"
                     @click="limparTodosEventos"
                   >
-                    Limpar Todos
+                    <v-icon class="btn-icon">mdi-delete</v-icon>
+                    <span class="btn-text">Limpar Todos</span>
                   </v-btn>
                   
                   <v-btn 
@@ -188,8 +191,8 @@
                     @click="gerarAlocacaoAutomatica"
                     :loading="gerandoAlocacao"
                   >
-                    <v-icon left>mdi-auto-fix</v-icon>
-                    Alocar Automaticamente
+                    <v-icon class="btn-icon">mdi-auto-fix</v-icon>
+                    <span class="btn-text">Alocar Automaticamente</span>
                   </v-btn>
                   
                   <v-btn 
@@ -199,13 +202,13 @@
                     size="small"
                     @click="mostrarResumoAlocacao"
                   >
-                    <v-icon left>mdi-information</v-icon>
-                    Resumo Alocação
+                    <v-icon class="btn-icon">mdi-information</v-icon>
+                    <span class="btn-text">Resumo Alocação</span>
                   </v-btn>
                   
-                  <v-btn variant="outlined" color="primary" class="export-btn">
-                    Exportar Documento
-                    <v-icon right>mdi-file-export</v-icon>
+                  <v-btn variant="outlined" color="primary" size="small" class="export-btn">
+                    <span class="btn-text">Exportar Documento</span>
+                    <v-icon class="btn-icon">mdi-file-export</v-icon>
                   </v-btn>
                 </div>
               </div>
@@ -224,48 +227,50 @@
                 • Use os ícones de navegação para mudar de mês
               </v-alert>
               
-              <div class="calendar-table">
-                <div class="calendar-days-header">
-                  <div v-for="day in dayNames" :key="day" class="day-header">{{ day }}</div>
-                </div>
-                <div class="calendar-grid">
-                  <div 
-                    v-for="day in calendarDays" 
-                    :key="day.date" 
-                    class="calendar-day"
-                    :class="{ 
-                      'other-month': !day.isCurrentMonth,
-                      'selectable': day.isCurrentMonth,
-                      'has-events': day.events.length > 0
-                    }"
-                    @click="day.isCurrentMonth ? selecionarDia(day) : null"
-                  >
-                    <div class="day-number">{{ day.day }}</div>
-                    <div v-if="day.events.length > 0" class="day-events">
-                      <div 
-                        v-for="event in day.events" 
-                        :key="event.id" 
-                        class="event-card"
-                        :class="[event.type, { 'evento-automatico': event.geradoAutomaticamente }]"
-                        @click.stop="editarEvento(event)"
-                      >
-                        <div class="event-title">
-                          {{ event.title }}
-                          <v-icon v-if="event.geradoAutomaticamente" size="12" color="white">mdi-auto-fix</v-icon>
-                        </div>
-                        <div class="event-subtitle">{{ event.subtitle }}</div>
-                        <div class="event-docente" v-if="event.docenteNome">
-                          👨‍🏫 {{ event.docenteNome }}
-                        </div>
-                        <div class="event-time">
-                          {{ event.horarioInicio }} - {{ event.horarioFim }}
+              <div class="calendar-table-container">
+                <div class="calendar-table">
+                  <div class="calendar-days-header">
+                    <div v-for="day in dayNames" :key="day" class="day-header">{{ day }}</div>
+                  </div>
+                  <div class="calendar-grid">
+                    <div 
+                      v-for="day in calendarDays" 
+                      :key="day.date" 
+                      class="calendar-day"
+                      :class="{ 
+                        'other-month': !day.isCurrentMonth,
+                        'selectable': day.isCurrentMonth,
+                        'has-events': day.events.length > 0
+                      }"
+                      @click="day.isCurrentMonth ? selecionarDia(day) : null"
+                    >
+                      <div class="day-number">{{ day.day }}</div>
+                      <div v-if="day.events.length > 0" class="day-events">
+                        <div 
+                          v-for="event in day.events" 
+                          :key="event.id" 
+                          class="event-card"
+                          :class="[event.type, { 'evento-automatico': event.geradoAutomaticamente }]"
+                          @click.stop="editarEvento(event)"
+                        >
+                          <div class="event-title">
+                            {{ event.title }}
+                            <v-icon v-if="event.geradoAutomaticamente" size="12" color="white">mdi-auto-fix</v-icon>
+                          </div>
+                          <div class="event-subtitle">{{ event.subtitle }}</div>
+                          <div class="event-docente" v-if="event.docenteNome">
+                            👨‍🏫 {{ event.docenteNome }}
+                          </div>
+                          <div class="event-time">
+                            {{ event.horarioInicio }} - {{ event.horarioFim }}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    
-                    <!-- Indicador de dia clicável -->
-                    <div v-if="day.isCurrentMonth && day.events.length === 0" class="add-event-hint">
-                      <v-icon size="small" color="primary">mdi-plus-circle-outline</v-icon>
+                      
+                      <!-- Indicador de dia clicável -->
+                      <div v-if="day.isCurrentMonth && day.events.length === 0" class="add-event-hint">
+                        <v-icon size="small" color="primary">mdi-plus-circle-outline</v-icon>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -821,6 +826,15 @@ const previousMonth = () => {
   }
 }
 
+const nextMonth = () => {
+  if (currentMonth.value === 11) {
+    currentMonth.value = 0
+    currentYear.value++
+  } else {
+    currentMonth.value++
+  }
+}
+
 
 
 const voltar = () => {
@@ -1150,7 +1164,7 @@ const gerarAlocacaoAutomatica = async () => {
           const horarios = docente.horarios[dia]
           console.log(`Horários do ${docente.nome} para ${dia}:`, horarios)
           
-          if (horarios.inicio && horarios.fim) {
+          if (horarios.inicio && horarios.fim && horarios.inicio !== '' && horarios.fim !== '') {
             // Gerar horários de aula baseado na disponibilidade
             const horariosAula = gerarHorariosAula(horarios.inicio, horarios.fim, dia)
             console.log(`Horários de aula gerados para ${docente.nome} em ${dia}:`, horariosAula)
@@ -1165,7 +1179,10 @@ const gerarAlocacaoAutomatica = async () => {
                 horario,
                 dia
               })
+              console.log(`Adicionado à chave ${chave}:`, {docente: docente.nome, horario})
             })
+          } else {
+            console.log(`Horários inválidos para ${docente.nome} em ${dia}:`, horarios)
           }
         }
       })
@@ -1375,22 +1392,23 @@ const mostrarResumoAlocacao = () => {
 
 <style scoped>
 .main-content {
-  padding: 2rem;
-  min-height: calc(100vh - 120px);
+  padding: 1rem;
+  min-height: calc(100vh - 140px);
   background-color: #E8E7E7;
+  overflow-y: auto;
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1000px;
   margin: 0 auto;
   background-color: white;
-  border-radius: 16px;
-  padding: 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .stepper-header {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   text-align: left;
   display: flex;
   justify-content: space-between;
@@ -1415,14 +1433,14 @@ const mostrarResumoAlocacao = () => {
 }
 
 .step-content {
-  padding: 2rem 0;
+  padding: 1rem 0;
 }
 
 .step-circles {
   display: flex;
   justify-content: center;
-  gap: 4rem;
-  margin-bottom: 4rem;
+  gap: 2rem;
+  margin-bottom: 2rem;
 }
 
 .step-circle {
@@ -1439,14 +1457,14 @@ const mostrarResumoAlocacao = () => {
 }
 
 .circle-icon {
-  width: 80px;
-  height: 80px;
+  width: 60px;
+  height: 60px;
   background-color: #4F46E5;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
+  font-size: 1.5rem;
   color: white;
 }
 
@@ -1590,7 +1608,7 @@ const mostrarResumoAlocacao = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .calendar-actions {
@@ -1619,10 +1637,17 @@ const mostrarResumoAlocacao = () => {
   color: white !important;
 }
 
+.calendar-table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .calendar-table {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   overflow: hidden;
+  min-width: 100%;
 }
 
 .calendar-days-header {
@@ -1632,10 +1657,11 @@ const mostrarResumoAlocacao = () => {
 }
 
 .day-header {
-  padding: 1rem;
+  padding: 0.75rem;
   text-align: center;
   font-weight: 600;
   color: white;
+  font-size: 0.9rem;
 }
 
 .calendar-grid {
@@ -1644,9 +1670,9 @@ const mostrarResumoAlocacao = () => {
 }
 
 .calendar-day {
-  min-height: 120px;
+  min-height: 80px;
   border: 1px solid #e5e7eb;
-  padding: 0.5rem;
+  padding: 0.4rem;
   position: relative;
   transition: all 0.2s ease;
 }
@@ -1800,8 +1826,8 @@ const mostrarResumoAlocacao = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 3rem;
-  padding-top: 2rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
   border-top: 1px solid #e5e7eb;
 }
 
@@ -1846,6 +1872,18 @@ const mostrarResumoAlocacao = () => {
   font-weight: 500 !important;
 }
 
+.calendar-actions .v-btn {
+  white-space: nowrap;
+}
+
+.calendar-actions .v-btn .btn-text {
+  margin-left: 0.5rem;
+}
+
+.calendar-actions .v-btn .btn-icon {
+  margin-right: 0.5rem;
+}
+
 :deep(.v-stepper) {
   box-shadow: none !important;
 }
@@ -1855,6 +1893,26 @@ const mostrarResumoAlocacao = () => {
 }
 
 /* Responsive design */
+@media (max-width: 1200px) {
+  .container {
+    max-width: 95%;
+    margin: 0 auto;
+  }
+  
+  .calendar-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .calendar-actions .v-btn {
+    font-size: 0.8rem;
+  }
+  
+  .calendar-actions .v-chip {
+    font-size: 0.75rem;
+  }
+}
+
 @media (max-width: 1024px) {
   .stepper-header {
     flex-direction: column;
@@ -1876,31 +1934,6 @@ const mostrarResumoAlocacao = () => {
   .fases-grid {
     grid-template-columns: 1fr;
   }
-}
-
-@media (max-width: 768px) {
-  .main-content {
-    padding: 1rem;
-  }
-  
-  .container {
-    padding: 1.5rem;
-  }
-  
-  .step-circles {
-    gap: 1.5rem;
-    margin-bottom: 3rem;
-  }
-  
-  .circle-icon {
-    width: 50px;
-    height: 50px;
-    font-size: 1.2rem;
-  }
-  
-  .circle-label {
-    font-size: 0.9rem;
-  }
   
   .calendar-header {
     flex-direction: column;
@@ -1909,31 +1942,362 @@ const mostrarResumoAlocacao = () => {
   }
   
   .calendar-actions {
-    flex-wrap: wrap;
     justify-content: center;
   }
   
+  .calendar-day {
+    min-height: 100px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 0.5rem;
+  }
+  
+  .container {
+    padding: 1rem;
+    border-radius: 8px;
+  }
+  
+  .stepper-header {
+    margin-bottom: 1rem;
+  }
+  
+  .page-title {
+    font-size: 1.1rem;
+    text-align: center;
+  }
+  
+  .step-circles {
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  
+  .circle-icon {
+    width: 45px;
+    height: 45px;
+    font-size: 1rem;
+  }
+  
+  .circle-label {
+    font-size: 0.8rem;
+  }
+  
+  .calendar-nav {
+    justify-content: center;
+  }
+  
+  .calendar-nav .v-btn {
+    min-width: 40px;
+  }
+  
   .month-year {
-    font-size: 1.2rem;
+    font-size: 1rem;
+    min-width: 150px;
+  }
+  
+  .calendar-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .calendar-actions .v-btn {
+    font-size: 0.75rem;
+    min-width: unset;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .calendar-actions .v-btn .btn-text {
+    display: none;
+  }
+  
+  .calendar-actions .v-btn .btn-icon {
+    margin: 0;
+  }
+  
+  .calendar-actions .v-chip {
+    font-size: 0.7rem;
   }
   
   .calendar-day {
-    min-height: 80px;
+    min-height: 60px;
+    padding: 0.25rem;
+    font-size: 0.8rem;
+  }
+  
+  .day-number {
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
   }
   
   .event-card {
-    font-size: 0.7rem;
+    font-size: 0.6rem;
+    padding: 0.15rem 0.25rem;
+    margin-bottom: 0.1rem;
+  }
+  
+  .event-title {
+    font-size: 0.6rem;
+    margin-bottom: 0.05rem;
+  }
+  
+  .event-subtitle {
+    font-size: 0.55rem;
+  }
+  
+  .event-docente {
+    font-size: 0.5rem;
+  }
+  
+  .event-time {
+    font-size: 0.5rem;
+  }
+  
+  .day-header {
+    padding: 0.5rem;
+    font-size: 0.8rem;
   }
   
   .actions {
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
   }
   
   .btn-voltar,
   .btn-continuar,
   .btn-finalizar {
     width: 100% !important;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 0.25rem;
+  }
+  
+  .container {
+    padding: 0.5rem;
+    border-radius: 4px;
+  }
+  
+  .step-circles {
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .circle-icon {
+    width: 35px;
+    height: 35px;
+    font-size: 0.8rem;
+  }
+  
+  .circle-label {
+    font-size: 0.7rem;
+  }
+  
+  .page-title {
+    font-size: 1rem;
+  }
+  
+  .calendar-nav {
+    gap: 0.5rem;
+  }
+  
+  .calendar-nav .v-btn {
+    min-width: 35px;
+    width: 35px;
+    height: 35px;
+  }
+  
+  .month-year {
+    font-size: 0.9rem;
+    min-width: 120px;
+  }
+  
+  .calendar-actions {
+    gap: 0.25rem;
+  }
+  
+  .calendar-actions .v-btn {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+  }
+  
+  .calendar-actions .v-btn .btn-text {
+    display: none;
+  }
+  
+  .calendar-actions .v-btn .btn-icon {
+    margin: 0;
+    font-size: 1rem;
+  }
+  
+  .calendar-actions .v-chip {
+    font-size: 0.65rem;
+  }
+  
+  .calendar-table {
+    min-width: 450px;
+  }
+  
+  .calendar-day {
+    min-width: 60px;
+  }
+  
+  .calendar-day {
+    min-height: 45px;
+    padding: 0.15rem;
+  }
+  
+  .day-number {
+    font-size: 0.7rem;
+    margin-bottom: 0.15rem;
+  }
+  
+  .event-card {
+    font-size: 0.55rem;
+    padding: 0.1rem 0.2rem;
+    margin-bottom: 0.05rem;
+  }
+  
+  .event-title {
+    font-size: 0.55rem;
+    margin-bottom: 0.02rem;
+  }
+  
+  .event-subtitle {
+    font-size: 0.5rem;
+  }
+  
+  .event-docente {
+    font-size: 0.45rem;
+  }
+  
+  .event-time {
+    font-size: 0.45rem;
+  }
+  
+  .day-header {
+    padding: 0.25rem;
+    font-size: 0.7rem;
+  }
+  
+  .add-event-hint {
+    bottom: 0.25rem;
+    right: 0.25rem;
+  }
+  
+  .add-event-hint .v-icon {
+    font-size: 0.8rem;
+  }
+  
+  .course-card {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+  
+  .course-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 0.9rem;
+  }
+  
+  .course-name {
+    font-size: 0.95rem;
+  }
+  
+  .fase-card {
+    padding: 1rem;
+  }
+  
+  .fase-header h4 {
+    font-size: 0.95rem;
+  }
+  
+  .fase-description {
+    font-size: 0.8rem;
+  }
+  
+  .fase-duration {
+    font-size: 0.8rem;
+  }
+}
+
+/* Otimizações para calendário em dispositivos móveis */
+@media (max-width: 768px) {
+  .calendar-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .calendar-table {
+    min-width: 600px;
+  }
+  
+  .calendar-grid {
+    min-width: 100%;
+  }
+  
+  .calendar-day {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .day-events {
+    max-height: calc(100% - 20px);
+    overflow-y: auto;
+  }
+  
+  .event-card {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .event-card:hover {
+    white-space: normal;
+    overflow: visible;
+    z-index: 10;
+    position: relative;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-table {
+    min-width: 500px;
+  }
+  
+  .calendar-day {
+    min-width: 70px;
+  }
+}
+
+/* Melhorias para touch em dispositivos móveis */
+@media (pointer: coarse) {
+  .calendar-day.selectable {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .calendar-day.selectable:active {
+    background-color: #e0f2fe;
+  }
+  
+  .event-card {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .event-card:active {
+    opacity: 0.8;
+  }
+  
+  .v-btn {
+    -webkit-tap-highlight-color: transparent;
   }
 }
 </style> 
