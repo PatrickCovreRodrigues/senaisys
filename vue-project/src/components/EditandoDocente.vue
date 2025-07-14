@@ -30,6 +30,9 @@
             </div>
             <div class="card-extra-info" v-if="docente.ucs && docente.ucs.length > 0">
               <small>{{ docente.ucs.length }} UC(s) vinculada(s)</small>
+              <ul class="uc-list">
+                <li v-for="uc in docente.ucs" :key="uc.id">{{ uc.nome }}</li>
+              </ul>
             </div>
           </div>
           <div class="card-actions">
@@ -241,6 +244,14 @@ const deletarDocente = async () => {
   font-weight: 500;
 }
 
+.uc-list {
+  list-style-type: disc;
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.9rem;
+  color: #333;
+}
+
 .card-actions {
   display: flex;
   align-items: center;
@@ -427,4 +438,4 @@ const deletarDocente = async () => {
     font-size: 1rem;
   }
 }
-</style> 
+</style>
