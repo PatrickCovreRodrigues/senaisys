@@ -1,84 +1,143 @@
-# 🔄 Funcionalidade de Recorrência - Alocação de Docentes por Semestre
+# Funcionalidade de Alocação Automática de Professores
 
-## 📋 Descrição
+## Descrição
+Esta funcionalidade permite gerar automaticamente um calendário completo de aulas para um semestre letivo, alocando professores com base em sua disponibilidade e implementando um sistema de alternância para otimizar a distribuição das aulas.
 
-Esta funcionalidade implementa um sistema de alocação automática de docentes ao longo de um semestre inteiro (5 meses), gerenciando conflitos de horários através de um sistema de **recorrência semanal alternada**.
+## Características Implementadas
 
-## 🎯 Objetivo
+### 1. Alocação Automática por Semestre
+- **Duração**: 20 semanas (~5 meses)
+- **Período**: Configurável (mês e ano de início)
+- **Dias úteis**: Segunda a sexta-feira
+- **Horários**: 4 horários noturnos por dia (19:00, 20:00, 21:00, 22:00)
 
-Quando múltiplos professores estão disponíveis para o mesmo dia/horário, o sistema:
-- **Semana 1**: Professor A ministra a aula
-- **Semana 2**: Professor B ministra a aula  
-- **Semana 3**: Professor A ministra a aula
-- **Semana 4**: Professor B ministra a aula
-- E assim sucessivamente...
+### 2. Sistema de Alternância de Professores
+- **Regra principal**: Quando há múltiplos professores disponíveis para o mesmo horário, o sistema alterna entre eles semanalmente
+- **Algoritmo**: Escolhe sempre o professor que há mais tempo não deu aula naquele slot específico
+- **Controle**: Mantém histórico da última semana em que cada professor foi alocado
 
-## ⚙️ Funcionamento
+### 3. Respeito à Disponibilidade
+- **Verificação de dias**: Só aloca professores nos dias em que estão disponíveis
+- **Verificação de horários**: Respeita os horários específicos cadastrados para cada professor
+- **Fallback**: Se não há horário específico, assume disponibilidade nos horários padrão
 
-### 1. **Detecção de Conflitos**
-- O sistema identifica quando 2 ou mais professores estão disponíveis no mesmo dia/horário
-- Considera as configurações de disponibilidade de cada docente (dias da semana + horários)
+### 4. Integração com o Sistema
+- **Banco de dados**: Salva automaticamente as alocações na tabela `Assoc_UDD`
+- **Calendário visual**: Integra com o calendário existente
+- **Persistência**: Salva eventos no localStorage para recuperação posterior
 
-### 2. **Algoritmo de Alternância**
-- Cria um cronograma de 5 meses (aproximadamente 20 semanas letivas)
-- Distribui as semanas entre os professores em conflito de forma alternada
-- Mantém registro de qual professor ministra em cada semana específica
+### 5. Estatísticas e Relatórios
+- **Total de aulas geradas**
+- **Número de docentes utilizados**
+- **Média de aulas por docente**
+- **Distribuição detalhada por professor**
+- **Cobertura por semana**
 
-### 3. **Geração do Calendário**
-- Gera eventos no calendário para cada semana do semestre
-- Cada evento contém:
-  - Data específica da aula
-  - Professor responsável naquela semana
-  - UC/disciplina (se vinculada)
-  - Horário (início e fim)
+## Como Usar
 
-## 🚀 Como Usar
+### No Frontend (Vue.js)
+1. Acesse a página "Gerar Calendário"
+2. Selecione um curso na primeira etapa
+3. Escolha as fases desejadas na segunda etapa
+4. Na terceira etapa (visualização do calendário), clique no botão **"Gerar Alocação Automática"**
+5. O sistema irá:
+   - Processar a alocação automática
+   - Mostrar estatísticas em um dialog
+   - Atualizar o calendário com as aulas geradas
+   - Salvar no localStorage para persistência
 
-1. **Cadastre os professores** com suas disponibilidades (dias e horários)
-2. **Vincule UCs aos professores** (opcional)
-3. **Acesse o Gerar Calendário** 
-4. **Clique no botão "Alocar Docentes para Semestre"** (novo botão)
-5. **Visualize o resultado** no calendário com as aulas distribuídas
-
-## 📊 Exemplo Prático
-
-**Cenário**: 
-- Professor João: disponível Segunda 19h-22h
-- Professor Maria: disponível Segunda 19h-22h  
-- UC: "Programação Web"
-
-**Resultado**:
+### Via API (Backend)
+```javascript
+// Exemplo de chamada
+const resultado = await calendarioAPI.gerarAlocacaoAutomatica({
+  curso_id: 1,
+  mes_inicio: 4,      // Abril
+  ano_inicio: 2025,
+  duracao_semanas: 20  // ~5 meses
+})
 ```
-Semana 1 (03/02): João - Programação Web - 19h-22h
-Semana 2 (10/02): Maria - Programação Web - 19h-22h  
-Semana 3 (17/02): João - Programação Web - 19h-22h
-Semana 4 (24/02): Maria - Programação Web - 19h-22h
-... (continua por 5 meses)
+
+## Estrutura dos Dados
+
+### Evento Gerado
+```javascript
+{
+  id: "auto_20250401_0_1",
+  title: "Aula - Programação Web",
+  subtitle: "Prof. João Silva",
+  date: "2025-04-01",
+  type: "aula-automatica",
+  horarioInicio: "19:00",
+  horarioFim: "20:00",
+  ucId: 1,
+  docenteId: 1,
+  docenteNome: "João Silva",
+  gerado_automaticamente: true,
+  semana: 1
+}
 ```
 
-## 🔧 Funcionalidades Técnicas
+### Estatísticas Retornadas
+```javascript
+{
+  total_docentes_utilizados: 5,
+  total_aulas_geradas: 400,
+  media_aulas_por_docente: 80,
+  distribuicao_docentes: {
+    1: 85,
+    2: 78,
+    3: 82,
+    // ...
+  },
+  aulas_por_semana: 20,
+  media_aulas_por_semana: 20
+}
+```
 
-- ✅ **Validação de disponibilidade** dos docentes
-- ✅ **Detecção automática de conflitos** de horários  
-- ✅ **Algoritmo de distribuição justa** entre professores
-- ✅ **Geração de eventos recorrentes** no calendário
-- ✅ **Suporte a múltiplos professores** no mesmo conflito
-- ✅ **Consideração de feriados** e recessos escolares
-- ✅ **Persistência no banco de dados** e localStorage
+## Algoritmo de Alternância
 
-## 📅 Período do Semestre
+### Estrutura de Controle
+```javascript
+alternancia_docentes = {
+  (dia_semana, horario): [
+    {
+      docente: <objeto_docente>,
+      ultima_semana: <numero_semana>
+    },
+    // ...
+  ]
+}
+```
 
-O sistema considera um semestre de **5 meses letivos**:
-- Aproximadamente **20 semanas** de aulas
-- Exclui automaticamente feriados nacionais
-- Considera apenas dias úteis (segunda a sexta)
-- Horários noturnos: 19h às 23h (segunda a sexta)
-- Horários matutinos: 10h às 12h (sábados)
+### Lógica de Seleção
+1. Para cada slot de aula (dia + horário):
+   - Busca docentes disponíveis naquele dia/horário
+   - Verifica qual docente foi alocado há mais tempo
+   - Seleciona o docente com menor `ultima_semana`
+   - Atualiza o registro de `ultima_semana` do docente escolhido
 
-## 🎨 Interface
+## Vantagens da Implementação
 
-A funcionalidade será integrada ao componente `GerarCalendario.vue` com:
-- **Novo botão**: "Alocar Docentes para Semestre"
-- **Dialog de configuração**: escolher mês de início e duração
-- **Visualização dos resultados**: no calendário existente
-- **Feedback visual**: indicadores de professores alternados
+1. **Distribuição Equilibrada**: Evita sobrecarga de alguns professores
+2. **Flexibilidade**: Respeita totalmente a disponibilidade cadastrada
+3. **Escalabilidade**: Funciona com qualquer número de professores
+4. **Rastreabilidade**: Salva no banco para auditoria
+5. **Facilidade de Uso**: Interface intuitiva no frontend
+6. **Estatísticas**: Permite análise da distribuição
+
+## Observações Técnicas
+
+- O sistema funciona com base nos dados já cadastrados no banco
+- Requer pelo menos um professor cadastrado com disponibilidade
+- Requer pelo menos uma UC associada ao curso
+- A duração padrão é de 20 semanas, mas pode ser configurada
+- Os horários seguem o padrão noturno (19:00-23:00)
+- O sistema ignora finais de semana automaticamente
+
+## Próximos Passos Sugeridos
+
+1. **Exportação para PDF**: Gerar relatórios em PDF
+2. **Configuração de Horários**: Permitir personalizar os horários
+3. **Regras Avançadas**: Implementar preferências de professores
+4. **Notificações**: Enviar e-mails para professores alocados
+5. **Validação de Conflitos**: Verificar sobreposições com outros calendários

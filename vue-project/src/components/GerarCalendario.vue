@@ -36,6 +36,8 @@
         v-model="currentStep" 
         class="custom-stepper"
         :items="stepperItems"
+        hide-actions
+        non-linear
       >
         <!-- Step 1: Escolher Curso -->
         <template v-slot:item.1>
@@ -145,7 +147,7 @@
                     <v-icon>mdi-chevron-left</v-icon>
                   </v-btn>
                   <h3 class="month-year">{{ monthNames[currentMonth] }} {{ currentYear }}</h3>
-                  <v-btn icon @click="nextMonth">
+                  <v-btn icon @click="previousMonth">
                     <v-icon>mdi-chevron-right</v-icon>
                   </v-btn>
                 </div>
@@ -179,19 +181,31 @@
                     Limpar Todos
                   </v-btn>
                   
-                  <v-btn variant="outlined" color="primary" class="export-btn">
-                    Exportar Documento
-                    <v-icon right>mdi-file-export</v-icon>
+                  <v-btn 
+                    variant="outlined" 
+                    color="success" 
+                    size="small"
+                    @click="gerarAlocacaoAutomatica"
+                    :loading="gerandoAlocacao"
+                  >
+                    <v-icon left>mdi-auto-fix</v-icon>
+                    Alocar Automaticamente
                   </v-btn>
                   
                   <v-btn 
-                    variant="flat" 
-                    color="success" 
-                    @click="abrirDialogAlocacao"
-                    :loading="processandoAlocacao"
+                    v-if="totalEventos > 0"
+                    variant="outlined" 
+                    color="info" 
+                    size="small"
+                    @click="mostrarResumoAlocacao"
                   >
-                    <v-icon left>mdi-calendar-sync</v-icon>
-                    Alocar Docentes para Semestre
+                    <v-icon left>mdi-information</v-icon>
+                    Resumo Alocação
+                  </v-btn>
+                  
+                  <v-btn variant="outlined" color="primary" class="export-btn">
+                    Exportar Documento
+                    <v-icon right>mdi-file-export</v-icon>
                   </v-btn>
                 </div>
               </div>
@@ -232,10 +246,13 @@
                         v-for="event in day.events" 
                         :key="event.id" 
                         class="event-card"
-                        :class="event.type"
+                        :class="[event.type, { 'evento-automatico': event.geradoAutomaticamente }]"
                         @click.stop="editarEvento(event)"
                       >
-                        <div class="event-title">{{ event.title }}</div>
+                        <div class="event-title">
+                          {{ event.title }}
+                          <v-icon v-if="event.geradoAutomaticamente" size="12" color="white">mdi-auto-fix</v-icon>
+                        </div>
                         <div class="event-subtitle">{{ event.subtitle }}</div>
                         <div class="event-docente" v-if="event.docenteNome">
                           👨‍🏫 {{ event.docenteNome }}
@@ -403,87 +420,76 @@
         </v-card>
       </v-dialog>
       
-      <!-- Dialog para configuração de alocação semestral -->
-      <v-dialog v-model="showAlocacaoDialog" max-width="600">
+      <!-- Dialog para resumo da alocação -->
+      <v-dialog v-model="showResumoDialog" max-width="800">
         <v-card>
-          <v-card-title>
-            <span class="text-h5">Alocação Automática para Semestre</span>
+          <v-card-title class="text-h5">
+            <v-icon left color="info">mdi-information</v-icon>
+            Resumo da Alocação Automática
           </v-card-title>
           
           <v-card-text>
-            <v-alert type="info" variant="tonal" class="mb-4">
-              <strong>Como funciona:</strong><br>
-              • O sistema aloca professores automaticamente para todo o semestre<br>
-              • Quando há conflitos (2+ professores no mesmo horário), eles se alternam semanalmente<br>
-              • Considera apenas professores com disponibilidade configurada
-            </v-alert>
-            
-            <v-form>
+            <div v-if="resumoAlocacao">
               <v-row>
-                <v-col cols="6">
-                  <v-select
-                    v-model="configAlocacao.mesInicio"
-                    :items="mesesOpcoes"
-                    label="Mês de Início"
-                    variant="outlined"
-                    item-title="nome"
-                    item-value="numero"
-                  ></v-select>
+                <v-col cols="12" md="4">
+                  <v-card variant="outlined" class="text-center pa-4">
+                    <v-icon size="48" color="primary">mdi-calendar-check</v-icon>
+                    <h3 class="mt-2">{{ resumoAlocacao.totalAulas }}</h3>
+                    <p class="text-grey">Total de Aulas</p>
+                  </v-card>
                 </v-col>
                 
-                <v-col cols="6">
-                  <v-text-field
-                    v-model="configAlocacao.anoInicio"
-                    label="Ano de Início"
-                    type="number"
-                    variant="outlined"
-                    :min="2024"
-                    :max="2030"
-                  ></v-text-field>
+                <v-col cols="12" md="4">
+                  <v-card variant="outlined" class="text-center pa-4">
+                    <v-icon size="48" color="success">mdi-account-group</v-icon>
+                    <h3 class="mt-2">{{ resumoAlocacao.docentesUtilizados }}</h3>
+                    <p class="text-grey">Docentes Utilizados</p>
+                  </v-card>
                 </v-col>
                 
-                <v-col cols="12">
-                  <v-slider
-                    v-model="configAlocacao.duracaoMeses"
-                    label="Duração do Semestre (meses)"
-                    :min="3"
-                    :max="8"
-                    :step="1"
-                    show-ticks
-                    tick-size="4"
-                    color="primary"
-                  >
-                    <template v-slot:append>
-                      <div class="text-caption">{{ configAlocacao.duracaoMeses }} meses</div>
-                    </template>
-                  </v-slider>
+                <v-col cols="12" md="4">
+                  <v-card variant="outlined" class="text-center pa-4">
+                    <v-icon size="48" color="warning">mdi-clock-outline</v-icon>
+                    <h3 class="mt-2">{{ resumoAlocacao.horasSemanais }}</h3>
+                    <p class="text-grey">Horas por Semana</p>
+                  </v-card>
                 </v-col>
               </v-row>
-            </v-form>
-            
-            <v-divider class="my-4"></v-divider>
-            
-            <div class="text-body-2 text-medium-emphasis">
-              <strong>Resultado esperado:</strong><br>
-              • Aproximadamente {{ Math.ceil(configAlocacao.duracaoMeses * 4.3) }} semanas de aulas<br>
-              • Professores alternam automaticamente em conflitos<br>
-              • Eventos serão adicionados ao calendário atual
+              
+              <v-divider class="my-4"></v-divider>
+              
+              <h4 class="mb-3">Distribuição por Docente:</h4>
+              <v-list>
+                <v-list-item 
+                  v-for="docente in resumoAlocacao.distribuicaoDocentes" 
+                  :key="docente.nome"
+                  class="mb-2"
+                >
+                  <template v-slot:prepend>
+                    <v-avatar color="primary">
+                      {{ docente.nome.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase() }}
+                    </v-avatar>
+                  </template>
+                  
+                  <v-list-item-title>{{ docente.nome }}</v-list-item-title>
+                  <v-list-item-subtitle>
+                    {{ docente.totalAulas }} aulas • {{ docente.especialidade || 'Sem especialidade' }}
+                  </v-list-item-subtitle>
+                  
+                  <template v-slot:append>
+                    <v-chip size="small" color="primary">
+                      {{ docente.diasSemana.join(', ') }}
+                    </v-chip>
+                  </template>
+                </v-list-item>
+              </v-list>
             </div>
           </v-card-text>
           
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="grey" text @click="showAlocacaoDialog = false">
-              Cancelar
-            </v-btn>
-            <v-btn 
-              color="success" 
-              text 
-              @click="processarAlocacaoSemestre"
-              :loading="processandoAlocacao"
-              :disabled="!configAlocacao.mesInicio || !configAlocacao.anoInicio"
-            >
-              {{ processandoAlocacao ? 'Processando...' : 'Iniciar Alocação' }}
+            <v-btn color="primary" text @click="showResumoDialog = false">
+              Fechar
             </v-btn>
           </v-card-actions>
         </v-card>
@@ -533,7 +539,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { cursosAPI, calendarioAPI, ucsAPI, docentesAPI, alocacaoAPI } from '@/services/api'
+import { cursosAPI, calendarioAPI, ucsAPI, docentesAPI } from '@/services/api'
 import { useLoading } from '@/composables/useLoading'
 import { useNotification } from '@/composables/useNotification'
 
@@ -548,10 +554,13 @@ const currentMonth = ref(3) // Abril (0-based)
 const currentYear = ref(2025)
 const loadingCourses = ref(false)
 const loadingCalendario = ref(false)
+const gerandoAlocacao = ref(false)
 const calendarioGerado = ref(null)
 
 // Dialog de programação de aulas
 const showAulaDialog = ref(false)
+const showResumoDialog = ref(false)
+const resumoAlocacao = ref(null)
 const diaSelecionado = ref(null)
 const editandoEvento = ref(false)
 const salvandoAula = ref(false)
@@ -565,15 +574,6 @@ const novaAula = ref({
   docenteId: null
 })
 
-// Dialog de configuração de alocação semestral
-const showAlocacaoDialog = ref(false)
-const configAlocacao = ref({
-  mesInicio: null,
-  anoInicio: null,
-  duracaoMeses: 5
-})
-const processandoAlocacao = ref(false)
-
 // Dados para o formulário
 const ucsDisponiveis = ref([])
 const docentesDisponiveis = ref([])
@@ -585,22 +585,6 @@ const tiposAula = [
   { title: 'Projeto', value: 'projeto' },
   { title: 'Avaliação', value: 'avaliacao' },
   { title: 'Apresentação', value: 'apresentacao' }
-]
-
-// Opções para seleção de mês
-const mesesOpcoes = [
-  { nome: 'Janeiro', numero: 1 },
-  { nome: 'Fevereiro', numero: 2 },
-  { nome: 'Março', numero: 3 },
-  { nome: 'Abril', numero: 4 },
-  { nome: 'Maio', numero: 5 },
-  { nome: 'Junho', numero: 6 },
-  { nome: 'Julho', numero: 7 },
-  { nome: 'Agosto', numero: 8 },
-  { nome: 'Setembro', numero: 9 },
-  { nome: 'Outubro', numero: 10 },
-  { nome: 'Novembro', numero: 11 },
-  { nome: 'Dezembro', numero: 12 }
 ]
 
 const stepperItems = [
@@ -617,11 +601,6 @@ onMounted(async () => {
   await carregarUCs()
   await carregarDocentes()
   carregarEventosDoStorage()
-  
-  // Configurar valores padrão para alocação
-  const agora = new Date()
-  configAlocacao.value.mesInicio = agora.getMonth() + 1
-  configAlocacao.value.anoInicio = agora.getFullYear()
 })
 
 const carregarCursos = async () => {
@@ -794,7 +773,10 @@ const calendarDays = computed(() => {
           type: evento.type || 'course-event',
           horarioInicio: evento.horarioInicio,
           horarioFim: evento.horarioFim,
-          ucId: evento.ucId
+          ucId: evento.ucId,
+          docenteId: evento.docenteId,
+          docenteNome: evento.docenteNome,
+          geradoAutomaticamente: evento.geradoAutomaticamente || false
         })
       }
     })
@@ -839,14 +821,7 @@ const previousMonth = () => {
   }
 }
 
-const nextMonth = () => {
-  if (currentMonth.value === 11) {
-    currentMonth.value = 0
-    currentYear.value++
-  } else {
-    currentMonth.value++
-  }
-}
+
 
 const voltar = () => {
   if (currentStep.value === 1) {
@@ -1131,98 +1106,270 @@ const limparTodosEventos = async () => {
   }
 }
 
-const salvarAlocacao = async () => {
-  processandoAlocacao.value = true
-  try {
-    // Simular salvamento da configuração de alocação
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    // Aqui você pode adicionar a lógica para salvar a configuração de alocação usando a alocacaoAPI
-    
-    showSuccess('Configuração de alocação salva com sucesso!')
-    fecharDialogAlocacao()
-  } catch (error) {
-    console.error('Erro ao salvar alocação:', error)
-    showError('Erro ao salvar alocação')
-  } finally {
-    processandoAlocacao.value = false
+// Função para gerar alocação automática de todo o semestre
+const gerarAlocacaoAutomatica = async () => {
+  if (docentesDisponiveis.value.length === 0) {
+    showError('Nenhum docente cadastrado! Cadastre docentes primeiro.')
+    return
   }
-}
 
-const fecharDialogAlocacao = () => {
-  showAlocacaoDialog.value = false
-  configAlocacao.value = {
-    mesInicio: null,
-    anoInicio: null,
-    duracaoMeses: 5
-  }
-}
+  const confirmar = confirm(
+    'Isso irá gerar automaticamente aulas para todo o semestre baseado na disponibilidade dos docentes. Deseja continuar?'
+  )
+  
+  if (!confirmar) return
 
-// Funções para alocação semestral
-const abrirDialogAlocacao = () => {
-  showAlocacaoDialog.value = true
-}
-
-const processarAlocacaoSemestre = async () => {
-  processandoAlocacao.value = true
+  gerandoAlocacao.value = true
   try {
-    console.log('Processando alocação semestral:', configAlocacao.value)
+    const eventosGerados = []
     
-    const resultado = await alocacaoAPI.processarSemestre(
-      configAlocacao.value.mesInicio,
-      configAlocacao.value.anoInicio,
-      configAlocacao.value.duracaoMeses
-    )
+    // Definir período do semestre (6 meses a partir do mês atual)
+    const inicioSemestre = new Date(currentYear.value, currentMonth.value, 1)
+    const fimSemestre = new Date(currentYear.value, currentMonth.value + 6, 0)
     
-    console.log('Resultado da alocação:', resultado)
+    // Mapear dias da semana
+    const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
     
-    if (resultado.success && resultado.resultado?.eventos) {
-      // Adicionar eventos ao calendário atual
-      if (!calendarioGerado.value) {
-        calendarioGerado.value = { eventos: [] }
-      }
+    console.log('Analisando docentes disponíveis:', docentesDisponiveis.value)
+    
+    // Organizar docentes por dia da semana e horário
+    const docentesPorDiaHorario = {}
+    
+    docentesDisponiveis.value.forEach(docente => {
+      console.log(`Analisando docente: ${docente.nome}`)
+      console.log('Disponibilidade:', docente.disponibilidade)
+      console.log('Horários:', docente.horarios)
       
-      // Mesclar eventos existentes com novos eventos
-      const eventosExistentes = calendarioGerado.value.eventos || []
-      const novosEventos = resultado.resultado.eventos
-      
-      // Remover eventos duplicados baseado no ID
-      const eventosUnicos = [...eventosExistentes]
-      novosEventos.forEach(novoEvento => {
-        const jaExiste = eventosExistentes.some(evento => evento.id === novoEvento.id)
-        if (!jaExiste) {
-          eventosUnicos.push(novoEvento)
+      // Verificar cada dia da semana
+      diasSemana.forEach(dia => {
+        // Verificar se o docente está disponível neste dia
+        const disponivel = docente.disponibilidade?.[dia]
+        console.log(`${docente.nome} - ${dia}: disponível = ${disponivel}`)
+        
+        if (disponivel && docente.horarios?.[dia]) {
+          const horarios = docente.horarios[dia]
+          console.log(`Horários do ${docente.nome} para ${dia}:`, horarios)
+          
+          if (horarios.inicio && horarios.fim) {
+            // Gerar horários de aula baseado na disponibilidade
+            const horariosAula = gerarHorariosAula(horarios.inicio, horarios.fim, dia)
+            console.log(`Horários de aula gerados para ${docente.nome} em ${dia}:`, horariosAula)
+            
+            horariosAula.forEach(horario => {
+              const chave = `${dia}-${horario.inicio}`
+              if (!docentesPorDiaHorario[chave]) {
+                docentesPorDiaHorario[chave] = []
+              }
+              docentesPorDiaHorario[chave].push({
+                docente,
+                horario,
+                dia
+              })
+            })
+          }
         }
       })
+    })
+    
+    console.log('Docentes organizados por dia/horário:', docentesPorDiaHorario)
+    
+    // Gerar eventos para cada dia do semestre
+    let dataAtual = new Date(inicioSemestre)
+    let contadorSemanas = {}
+    
+    while (dataAtual <= fimSemestre) {
+      const diaSemana = dataAtual.getDay()
+      const nomeDia = diasSemana[diaSemana]
       
-      calendarioGerado.value.eventos = eventosUnicos
+      // Pular domingos (geralmente não há aulas)
+      if (diaSemana !== 0) {
+        // Buscar docentes disponíveis para este dia
+        Object.entries(docentesPorDiaHorario).forEach(([chave, docentes]) => {
+          const [diaChave, horarioInicio] = chave.split('-')
+          
+          if (diaChave === nomeDia && docentes.length > 0) {
+            // Calcular número da semana para alternância
+            const numeroSemana = Math.floor((dataAtual.getTime() - inicioSemestre.getTime()) / (7 * 24 * 60 * 60 * 1000))
+            
+            // Inicializar contador para esta chave se não existir
+            if (!contadorSemanas[chave]) {
+              contadorSemanas[chave] = 0
+            }
+            
+            // Selecionar docente baseado na alternância semanal
+            const docenteIndex = contadorSemanas[chave] % docentes.length
+            const docenteSelecionado = docentes[docenteIndex]
+            
+            // Incrementar contador apenas quando muda de semana
+            if (numeroSemana > (contadorSemanas[chave + '_ultima_semana'] || -1)) {
+              contadorSemanas[chave] = (contadorSemanas[chave] + 1) % docentes.length
+              contadorSemanas[chave + '_ultima_semana'] = numeroSemana
+            }
+            
+            // Gerar título da aula baseado na especialidade do docente
+            const titulo = docenteSelecionado.docente.especialidade 
+              ? `Aula de ${docenteSelecionado.docente.especialidade}`
+              : 'Aula Programada'
+            
+            // Criar evento
+            const evento = {
+              id: `auto_${dataAtual.getTime()}_${horarioInicio}`,
+              title: titulo,
+              subtitle: `Aula automática - ${docenteSelecionado.docente.nome}`,
+              date: dataAtual.toISOString(),
+              type: 'aula-teorica',
+              horarioInicio: docenteSelecionado.horario.inicio,
+              horarioFim: docenteSelecionado.horario.fim,
+              docenteId: docenteSelecionado.docente.id,
+              docenteNome: docenteSelecionado.docente.nome,
+              geradoAutomaticamente: true
+            }
+            
+            eventosGerados.push(evento)
+          }
+        })
+      }
       
-      // Salvar no localStorage
-      salvarEventosNoStorage()
-      
-      // Mostrar sucesso
-      const estatisticas = resultado.resultado.estatisticas
-      const periodo = resultado.resultado.periodo
-      
-      showSuccess(
-        `🎯 Alocação concluída! ` +
-        `${periodo.total_eventos} eventos gerados para ${periodo.total_semanas} semanas. ` +
-        `${estatisticas.docentes_envolvidos} docentes alocados, ` +
-        `${estatisticas.conflitos_detectados} conflitos resolvidos com alternância.`
-      )
-      
-      showAlocacaoDialog.value = false
-      
+      // Avançar para o próximo dia
+      dataAtual.setDate(dataAtual.getDate() + 1)
+    }
+    
+    console.log('Eventos gerados:', eventosGerados.length)
+    
+    // Adicionar eventos gerados ao calendário
+    if (!calendarioGerado.value) {
+      calendarioGerado.value = { eventos: [] }
+    }
+    
+    // Remover eventos automáticos anteriores
+    calendarioGerado.value.eventos = calendarioGerado.value.eventos.filter(
+      evento => !evento.geradoAutomaticamente
+    )
+    
+    // Adicionar novos eventos
+    calendarioGerado.value.eventos.push(...eventosGerados)
+    
+    // Salvar no localStorage
+    salvarEventosNoStorage()
+    
+    if (eventosGerados.length > 0) {
+      showSuccess(`Alocação automática concluída! ${eventosGerados.length} aulas foram programadas para o semestre.`)
     } else {
-      showError('Erro no processamento da alocação')
+      showError('Nenhuma aula pôde ser gerada. Verifique se os docentes têm disponibilidade e horários configurados corretamente.')
     }
     
   } catch (error) {
-    console.error('Erro ao processar alocação semestral:', error)
-    showError(error.message || 'Erro ao processar alocação semestral')
+    console.error('Erro ao gerar alocação automática:', error)
+    showError('Erro ao gerar alocação automática')
   } finally {
-    processandoAlocacao.value = false
+    gerandoAlocacao.value = false
   }
+}
+
+// Função auxiliar para gerar horários de aula baseado na disponibilidade
+const gerarHorariosAula = (inicio, fim, dia) => {
+  const horarios = []
+  
+  console.log(`Gerando horários para ${dia}: ${inicio} - ${fim}`)
+  
+  // Converter horários para minutos para facilitar cálculos
+  const inicioMinutos = parseInt(inicio.split(':')[0]) * 60 + parseInt(inicio.split(':')[1])
+  const fimMinutos = parseInt(fim.split(':')[0]) * 60 + parseInt(fim.split(':')[1])
+  
+  if (dia === 'sabado') {
+    // Sábado: aulas de 1 hora
+    let horarioAtual = inicioMinutos
+    
+    while (horarioAtual + 60 <= fimMinutos) {
+      const horaInicio = Math.floor(horarioAtual / 60).toString().padStart(2, '0') + ':' + 
+                       (horarioAtual % 60).toString().padStart(2, '0')
+      const horaFim = Math.floor((horarioAtual + 60) / 60).toString().padStart(2, '0') + ':' + 
+                     ((horarioAtual + 60) % 60).toString().padStart(2, '0')
+      
+      horarios.push({
+        inicio: horaInicio,
+        fim: horaFim
+      })
+      
+      horarioAtual += 60 // Próxima hora
+    }
+  } else {
+    // Segunda a sexta: aulas de 2 horas
+    let horarioAtual = inicioMinutos
+    
+    while (horarioAtual + 120 <= fimMinutos) {
+      const horaInicio = Math.floor(horarioAtual / 60).toString().padStart(2, '0') + ':' + 
+                       (horarioAtual % 60).toString().padStart(2, '0')
+      const horaFim = Math.floor((horarioAtual + 120) / 60).toString().padStart(2, '0') + ':' + 
+                     ((horarioAtual + 120) % 60).toString().padStart(2, '0')
+      
+      horarios.push({
+        inicio: horaInicio,
+        fim: horaFim
+      })
+      
+      horarioAtual += 120 // Próximas 2 horas
+    }
+  }
+  
+  console.log(`Horários gerados:`, horarios)
+  return horarios
+}
+
+// Função para mostrar resumo da alocação
+const mostrarResumoAlocacao = () => {
+  if (!calendarioGerado.value || !calendarioGerado.value.eventos.length) {
+    showError('Nenhuma alocação encontrada!')
+    return
+  }
+  
+  const eventos = calendarioGerado.value.eventos
+  const eventosAutomaticos = eventos.filter(e => e.geradoAutomaticamente)
+  
+  if (eventosAutomaticos.length === 0) {
+    showError('Nenhuma alocação automática encontrada!')
+    return
+  }
+  
+  // Calcular estatísticas
+  const docentesUnicosSet = new Set(eventosAutomaticos.map(e => e.docenteId))
+  const distribuicaoDocentes = {}
+  
+  eventosAutomaticos.forEach(evento => {
+    if (!distribuicaoDocentes[evento.docenteId]) {
+      const docente = docentesDisponiveis.value.find(d => d.id === evento.docenteId)
+      distribuicaoDocentes[evento.docenteId] = {
+        nome: evento.docenteNome,
+        especialidade: docente?.especialidade,
+        totalAulas: 0,
+        diasSemana: new Set()
+      }
+    }
+    
+    distribuicaoDocentes[evento.docenteId].totalAulas++
+    
+    // Adicionar dia da semana
+    const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab']
+    const diaSemana = new Date(evento.date).getDay()
+    distribuicaoDocentes[evento.docenteId].diasSemana.add(diasSemana[diaSemana])
+  })
+  
+  // Converter Set para Array
+  Object.values(distribuicaoDocentes).forEach(docente => {
+    docente.diasSemana = Array.from(docente.diasSemana)
+  })
+  
+  // Calcular horas semanais (estimativa)
+  const horasSemanais = eventosAutomaticos.length / 26 * 2 // 26 semanas no semestre, 2h por aula
+  
+  resumoAlocacao.value = {
+    totalAulas: eventosAutomaticos.length,
+    docentesUtilizados: docentesUnicosSet.size,
+    horasSemanais: Math.round(horasSemanais),
+    distribuicaoDocentes: Object.values(distribuicaoDocentes)
+  }
+  
+  showResumoDialog.value = true
 }
 </script>
 
@@ -1585,6 +1732,22 @@ const processarAlocacaoSemestre = async () => {
   color: white;
 }
 
+.event-card.evento-automatico {
+  border: 2px solid #10b981;
+  position: relative;
+}
+
+.event-card.evento-automatico::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 8px;
+  height: 8px;
+  background-color: #10b981;
+  border-radius: 50%;
+}
+
 .event-card {
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1773,4 +1936,4 @@ const processarAlocacaoSemestre = async () => {
     width: 100% !important;
   }
 }
-</style>
+</style> 

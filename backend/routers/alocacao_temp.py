@@ -13,7 +13,6 @@ from alocacao_docentes import (
     HORARIOS_NOTURNOS
 )
 from sistema_alocacao_otimizado import alocar_docentes_otimizado
-from alocacao_recorrencia import processar_alocacao_semestre_completo
 
 router = APIRouter(tags=["alocacao"])
 

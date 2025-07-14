@@ -227,6 +227,12 @@ export const calendarioAPI = {
   eventos: async (cursoId) => {
     const response = await api.get(`/calendario/eventos/${cursoId}`)
     return response.data
+  },
+
+  // Gerar alocação automática de professores
+  gerarAlocacaoAutomatica: async (dadosAlocacao) => {
+    const response = await api.post('/calendario/gerar-alocacao-automatica', dadosAlocacao)
+    return response.data
   }
 }
 
@@ -296,16 +302,6 @@ export const alocacaoAPI = {
       params: { ano, mes }
     })
     return response.data
-  },
-
-  // Processar alocação semestral com recorrência
-  processarSemestre: async (mesInicio = null, anoInicio = null, duracaoMeses = 5) => {
-    const response = await api.post('/alocacao/processar-semestre', {
-      mes_inicio: mesInicio,
-      ano_inicio: anoInicio,
-      duracao_meses: duracaoMeses
-    })
-    return response.data
   }
 }
 
@@ -318,4 +314,4 @@ export const healthAPI = {
 }
 
 // Export da instância axios configurada para uso direto se necessário
-export default api 
+export default api

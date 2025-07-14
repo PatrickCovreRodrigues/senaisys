@@ -38,7 +38,7 @@ class DocenteBase(BaseModel):
     horarios: Optional[Dict[str, Dict[str, str]]] = {}
 
 class DocenteCreate(DocenteBase):
-    pass
+    ucs_ids: Optional[List[int]] = []
 
 class DocenteUpdate(BaseModel):
     nome: Optional[str] = None
@@ -52,11 +52,13 @@ class DocenteUpdate(BaseModel):
     disciplinas: Optional[List[str]] = None
     disponibilidade: Optional[Dict[str, bool]] = None
     horarios: Optional[Dict[str, Dict[str, str]]] = None
+    ucs_ids: Optional[List[int]] = None
 
 class Docente(DocenteBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    ucs: Optional[List['UC']] = []
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -80,8 +82,7 @@ class UC(UCBase):
     id: int
     created_at: datetime
     updated_at: datetime
-    docente: Optional[Docente] = None
-    curso: Optional[Curso] = None
+    curso: Optional['Curso'] = None
     
     model_config = ConfigDict(from_attributes=True)
 

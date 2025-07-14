@@ -10,10 +10,24 @@ router = APIRouter()
 @router.post("/", response_model=Docente)
 def criar_docente(docente: DocenteCreate, db: Session = Depends(get_db)):
     """Criar um novo docente"""
-    db_docente = DocenteModel(**docente.model_dump())
+    docente_data = docente.model_dump()
+    ucs_ids = docente_data.pop('ucs_ids', [])
+    
+    db_docente = DocenteModel(**docente_data)
     db.add(db_docente)
     db.commit()
     db.refresh(db_docente)
+    
+    # Vincular UCs ao docente
+    if ucs_ids:
+        from models import UC as UCModel
+        for uc_id in ucs_ids:
+            uc = db.query(UCModel).filter(UCModel.id == uc_id).first()
+            if uc:
+                uc.docente_id = db_docente.id
+        db.commit()
+        db.refresh(db_docente)
+    
     return db_docente
 
 @router.get("/", response_model=List[Docente])
@@ -38,6 +52,22 @@ def atualizar_docente(docente_id: int, docente_update: DocenteUpdate, db: Sessio
         raise HTTPException(status_code=404, detail="Docente não encontrado")
     
     update_data = docente_update.model_dump(exclude_unset=True)
+    
+    # Se houver ucs_ids, atualizar as UCs vinculadas
+    if 'ucs_ids' in update_data:
+        ucs_ids = update_data.pop('ucs_ids')
+        
+        # Desvincular todas as UCs atuais do docente
+        from models import UC as UCModel
+        db.query(UCModel).filter(UCModel.docente_id == docente_id).update({"docente_id": None})
+        
+        # Vincular as novas UCs
+        if ucs_ids:
+            for uc_id in ucs_ids:
+                uc = db.query(UCModel).filter(UCModel.id == uc_id).first()
+                if uc:
+                    uc.docente_id = docente_id
+    
     for field, value in update_data.items():
         setattr(docente, field, value)
     

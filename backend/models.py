@@ -38,7 +38,7 @@ class Docente(Base):
     
     # Relacionamentos
     ucs = relationship("UC", back_populates="docente")
-    alocacoes = relationship("Assoc_UDD", back_populates="docente")
+    alocacoes = relationship("Assoc_UDD", back_populates="docente", cascade="all, delete-orphan")
 
 class UC(Base):
     __tablename__ = "ucs"
@@ -46,7 +46,7 @@ class UC(Base):
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String(255), nullable=False)
     carga_horaria = Column(Integer, nullable=False)
-    docente_id = Column(Integer, ForeignKey("docentes.id"), nullable=True)
+    docente_id = Column(Integer, ForeignKey("docentes.id", ondelete="SET NULL"), nullable=True)
     curso_id = Column(Integer, ForeignKey("cursos.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -61,7 +61,7 @@ class Assoc_UDD(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     uc_id = Column(Integer, ForeignKey("ucs.id"), nullable=False)
-    docente_id = Column(Integer, ForeignKey("docentes.id"), nullable=False)
+    docente_id = Column(Integer, ForeignKey("docentes.id", ondelete="CASCADE"), nullable=False)
     dia_semana = Column(Integer, nullable=False)  # 0=Segunda, 1=Terça, ..., 4=Sexta
     horario_inicio = Column(String(10), nullable=False)  # Ex: "19:00"
     horario_fim = Column(String(10), nullable=False)  # Ex: "22:20"
