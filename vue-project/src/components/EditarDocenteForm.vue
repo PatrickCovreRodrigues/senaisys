@@ -135,7 +135,7 @@
               <div class="time-input">
                 <v-select
                   v-model="formData.horarios[day.value].inicio"
-                  :items="horariosOpcoes"
+                  :items="obterHorariosPorDia(day.value)"
                   variant="outlined"
                   hide-details
                   density="compact"
@@ -144,7 +144,7 @@
               <div class="time-input">
                 <v-select
                   v-model="formData.horarios[day.value].fim"
-                  :items="horariosOpcoes"
+                  :items="obterHorariosPorDia(day.value)"
                   variant="outlined"
                   hide-details
                   density="compact"
@@ -244,10 +244,8 @@ const carregarDocente = async () => {
       formData.value.horarios[dia] = docente.horarios?.[dia] || { inicio: '', fim: '' }
     })
     
-    // Carregar UCs vinculadas (a API deve retornar essa info)
-    if (docente.ucs && Array.isArray(docente.ucs)) {
-      ucsVinculadas.value = docente.ucs
-    }
+    // Carregar UCs vinculadas do docente usando a API específica
+    await carregarUCsDoDocente()
 
   } catch (error) {
     console.error('Erro ao carregar docente:', error)
@@ -268,6 +266,16 @@ const carregarUCs = async () => {
   }
 }
 
+const carregarUCsDoDocente = async () => {
+  try {
+    const ucsDoDocente = await docentesAPI.listarUCs(docenteId.value)
+    ucsVinculadas.value = ucsDoDocente || []
+  } catch (error) {
+    console.error('Erro ao carregar UCs do docente:', error)
+    showError('Erro ao carregar as UCs do docente.')
+  }
+}
+
 const diasSemana = [
   { value: 'segunda', label: 'Segunda-Feira' },
   { value: 'terca', label: 'Terça-Feira' },
@@ -277,7 +285,16 @@ const diasSemana = [
   { value: 'sabado', label: 'Sábado' }
 ]
 
-const horariosOpcoes = ['19:00', '20:00', '21:00', '22:00', '23:00']
+const horariosOpcoes = ['10:00', '11:00', '12:00', '19:00', '20:00', '21:00', '22:00', '23:00']
+
+// Função para obter horários baseado no dia da semana
+const obterHorariosPorDia = (dia) => {
+  if (dia === 'sabado') {
+    return ['10:00', '11:00', '12:00']
+  } else {
+    return ['19:00', '20:00', '21:00', '22:00', '23:00']
+  }
+}
 
 const voltar = () => {
   router.push('/editando-docente')

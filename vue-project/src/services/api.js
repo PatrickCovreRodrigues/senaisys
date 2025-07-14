@@ -296,6 +296,16 @@ export const alocacaoAPI = {
       params: { ano, mes }
     })
     return response.data
+  },
+
+  // Processar alocação semestral com recorrência
+  processarSemestre: async (mesInicio = null, anoInicio = null, duracaoMeses = 5) => {
+    const response = await api.post('/alocacao/processar-semestre', {
+      mes_inicio: mesInicio,
+      ano_inicio: anoInicio,
+      duracao_meses: duracaoMeses
+    })
+    return response.data
   }
 }
 

@@ -22,7 +22,15 @@
           <div class="card-icon">{{ docente.nome.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase() }}</div>
           <div class="card-content">
             <div class="card-label">{{ docente.nome }}</div>
-            <div class="card-subtitle">{{ docente.email }} • {{ docente.especialidade || 'Sem especialidade' }}</div>
+            <div class="card-subtitle">
+              <span v-if="docente.email">{{ docente.email }}</span>
+              <span v-if="docente.email && docente.especialidade"> • </span>
+              <span v-if="docente.especialidade">{{ docente.especialidade }}</span>
+              <span v-if="!docente.email && !docente.especialidade">Sem informações adicionais</span>
+            </div>
+            <div class="card-extra-info" v-if="docente.ucs && docente.ucs.length > 0">
+              <small>{{ docente.ucs.length }} UC(s) vinculada(s)</small>
+            </div>
           </div>
           <div class="card-actions">
             <button class="delete-btn" @click.stop="confirmarDelete(docente)" :title="`Deletar ${docente.nome}`">
@@ -103,7 +111,7 @@ const editarDocente = (docente) => {
 }
 
 const criarNovoDocente = () => {
-  router.push('/criar-docente')
+  router.push('/criar-docente-form')
 }
 
 const confirmarDelete = (docente) => {
@@ -221,6 +229,16 @@ const deletarDocente = async () => {
   font-size: 0.9rem;
   color: #666;
   font-weight: 400;
+}
+
+.card-extra-info {
+  margin-top: 0.25rem;
+}
+
+.card-extra-info small {
+  font-size: 0.8rem;
+  color: #10B981;
+  font-weight: 500;
 }
 
 .card-actions {
