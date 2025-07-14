@@ -187,7 +187,7 @@
                     :loading="gerandoAlocacao"
                   >
                     <v-icon class="btn-icon">mdi-auto-fix</v-icon>
-                    <span class="btn-text">Alocar Automaticamente</span>
+                    <span class="btn-text">Alocar Mês Automaticamente</span>
                   </v-btn>
                   
                   <v-btn 
@@ -1115,7 +1115,7 @@ const limparTodosEventos = async () => {
   }
 }
 
-// Função para gerar alocação automática de todo o semestre
+// Função para gerar alocação automática do mês atual
 const gerarAlocacaoAutomatica = async () => {
   if (docentesDisponiveis.value.length === 0) {
     showError('Nenhum docente cadastrado! Cadastre docentes primeiro.')
@@ -1123,7 +1123,7 @@ const gerarAlocacaoAutomatica = async () => {
   }
 
   const confirmar = confirm(
-    'Isso irá gerar automaticamente aulas para todo o semestre baseado na disponibilidade dos docentes. Deseja continuar?'
+    'Isso irá gerar automaticamente aulas para o mês atual baseado na disponibilidade dos docentes. Deseja continuar?'
   )
   
   if (!confirmar) return
@@ -1132,9 +1132,9 @@ const gerarAlocacaoAutomatica = async () => {
   try {
     const eventosGerados = []
     
-    // Definir período do semestre (6 meses a partir do mês atual)
-    const inicioSemestre = new Date(currentYear.value, currentMonth.value, 1)
-    const fimSemestre = new Date(currentYear.value, currentMonth.value + 6, 0)
+    // Definir período do mês atual
+    const inicioMes = new Date(currentYear.value, currentMonth.value, 1)
+    const fimMes = new Date(currentYear.value, currentMonth.value + 1, 0)
     
     // Mapear dias da semana
     const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
@@ -1185,11 +1185,11 @@ const gerarAlocacaoAutomatica = async () => {
     
     console.log('Docentes organizados por dia/horário:', docentesPorDiaHorario)
     
-    // Gerar eventos para cada dia do semestre
-    let dataAtual = new Date(inicioSemestre)
+    // Gerar eventos para cada dia do mês atual
+    let dataAtual = new Date(inicioMes)
     let contadorSemanas = {}
     
-    while (dataAtual <= fimSemestre) {
+    while (dataAtual <= fimMes) {
       const diaSemana = dataAtual.getDay()
       const nomeDia = diasSemana[diaSemana]
       
@@ -1201,7 +1201,7 @@ const gerarAlocacaoAutomatica = async () => {
           
           if (diaChave === nomeDia && docentes.length > 0) {
             // Calcular número da semana para alternância
-            const numeroSemana = Math.floor((dataAtual.getTime() - inicioSemestre.getTime()) / (7 * 24 * 60 * 60 * 1000))
+            const numeroSemana = Math.floor((dataAtual.getTime() - inicioMes.getTime()) / (7 * 24 * 60 * 60 * 1000))
             
             // Inicializar contador para esta chave se não existir
             if (!contadorSemanas[chave]) {
@@ -1265,7 +1265,7 @@ const gerarAlocacaoAutomatica = async () => {
     salvarEventosNoStorage()
     
     if (eventosGerados.length > 0) {
-      showSuccess(`Alocação automática concluída! ${eventosGerados.length} aulas foram programadas para o semestre.`)
+      showSuccess(`Alocação automática concluída! ${eventosGerados.length} aulas foram programadas para o mês.`)
     } else {
       showError('Nenhuma aula pôde ser gerada. Verifique se os docentes têm disponibilidade e horários configurados corretamente.')
     }
@@ -1371,13 +1371,13 @@ const mostrarResumoAlocacao = () => {
     docente.diasSemana = Array.from(docente.diasSemana)
   })
   
-  // Calcular horas semanais (estimativa)
-  const horasSemanais = eventosAutomaticos.length / 26 * 2 // 26 semanas no semestre, 2h por aula
+  // Calcular horas mensais (estimativa)
+  const horasMensais = eventosAutomaticos.length * 2 // 2h por aula
   
   resumoAlocacao.value = {
     totalAulas: eventosAutomaticos.length,
     docentesUtilizados: docentesUnicosSet.size,
-    horasSemanais: Math.round(horasSemanais),
+    horasSemanais: Math.round(horasMensais / 4), // Dividir por 4 semanas para ter valor semanal
     distribuicaoDocentes: Object.values(distribuicaoDocentes)
   }
   

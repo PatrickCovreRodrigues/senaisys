@@ -1,13 +1,13 @@
 # Funcionalidade de Alocação Automática de Professores
 
 ## Descrição
-Esta funcionalidade permite gerar automaticamente um calendário completo de aulas para um semestre letivo, alocando professores com base em sua disponibilidade e implementando um sistema de alternância para otimizar a distribuição das aulas.
+Esta funcionalidade permite gerar automaticamente um calendário completo de aulas para um mês letivo, alocando professores com base em sua disponibilidade e implementando um sistema de alternância para otimizar a distribuição das aulas.
 
 ## Características Implementadas
 
-### 1. Alocação Automática por Semestre
-- **Duração**: 20 semanas (~5 meses)
-- **Período**: Configurável (mês e ano de início)
+### 1. Alocação Automática por Mês
+- **Duração**: 4-5 semanas (~1 mês)
+- **Período**: Configurável (mês e ano atual)
 - **Dias úteis**: Segunda a sexta-feira
 - **Horários**: 4 horários noturnos por dia (19:00, 20:00, 21:00, 22:00)
 
