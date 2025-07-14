@@ -1,7 +1,9 @@
 <template>
   <header class="navbar">
     <div class="navbar-brand">
-      <img src="@/assets/senailogo.png" alt="SESI SENAI" class="brand-logo" />
+      <button class="logo-btn" @click="voltarHome" aria-label="Voltar para Home">
+        <img src="@/assets/senailogo.png" alt="SESI SENAI" class="brand-logo" />
+      </button>
     </div>
     <nav class="navbar-menu">
       <router-link to="/novo-cadastro" class="nav-link">Novo cadastro</router-link>
@@ -10,6 +12,14 @@
     </nav>
   </header>
 </template>
+
+<script setup>
+import { useRouter } from 'vue-router'
+const router = useRouter()
+const voltarHome = () => {
+  router.push('/')
+}
+</script>
 
 <style scoped>
 .navbar {
@@ -62,6 +72,18 @@
   background-color: rgba(79, 70, 229, 0.1);
 }
 
+.logo-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  outline: none;
+}
+.logo-btn:focus {
+  outline: none;
+}
+
 /* Responsive design - Tablet */
 @media (max-width: 1024px) {
   .navbar {
@@ -91,4 +113,4 @@
     height: 35px;
   }
 }
-</style> 
+</style>

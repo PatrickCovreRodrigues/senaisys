@@ -143,13 +143,8 @@
             <div class="calendar-content">
               <div class="calendar-header">
                 <div class="calendar-nav">
-                  <v-btn icon size="small" @click="previousMonth">
-                    <v-icon>mdi-chevron-left</v-icon>
-                  </v-btn>
+                  <!-- Removido navegação de mês -->
                   <h3 class="month-year">{{ monthNames[currentMonth] }} {{ currentYear }}</h3>
-                  <v-btn icon size="small" @click="nextMonth">
-                    <v-icon>mdi-chevron-right</v-icon>
-                  </v-btn>
                 </div>
                 
                 <div class="calendar-actions">
@@ -2300,4 +2295,4 @@ const mostrarResumoAlocacao = () => {
     -webkit-tap-highlight-color: transparent;
   }
 }
-</style> 
+</style>
